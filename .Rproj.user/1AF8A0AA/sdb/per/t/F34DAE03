@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "# Data source: http://www.electoralcommission.org.uk/find-information-by-subject/elections-and-referendums/past-elections-and-referendums/eu-referendum/electorate-and-count-information\n# The Electoral Commssion\n# CSV at: http://www.electoralcommission.org.uk/__data/assets/file/0014/212135/EU-referendum-result-data.csv\ncsv_url <- 'http://www.electoralcommission.org.uk/__data/assets/file/0014/212135/EU-referendum-result-data.csv'\nraw_votes <- read.csv(csv_url, stringsAsFactors = F)\nnames_votes <- raw_votes$Area\nnames_diff <- setdiff(names_votes, names_shp)\n\nnames_diff1 <- setdiff(names_shp, names_votes)\n\n# change the name in the CSV (add 'The')\nraw_votes$Area[grepl('glamorgan', raw_votes$Area, ignore.case = T)] <- 'The Vale of Glamorgan'\n",
+    "created" : 1488591014090.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3929481319",
+    "id" : "F34DAE03",
+    "lastKnownWriteTime" : 1488679212,
+    "last_content_update" : 1488679212131,
+    "path" : "C:/Users/Xinye/Dropbox/programming/brexit/code/process_votes.R",
+    "project_path" : "code/process_votes.R",
+    "properties" : {
+        "marks" : "<:6,44\n>:6,45",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

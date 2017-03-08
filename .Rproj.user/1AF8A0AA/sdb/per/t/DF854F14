@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "# Hexagon shape source:\n# http://www.arcgis.com/home/item.html?id=593037bc399e460bb7c6c631ceff67b4 - GB Local Authority Hexagon Cartogram (Esri Shapefile)\n# http://www.arcgis.com/home/item.html?id=15baaa6fecd54aa4b7250780b6534682 - GB Parliamentary Constituency Hexagon Cartogram (Esri Shapefile)\n# https://www.arcgis.com/home/item.html?id=d348614c97264ae19b0311019a5f2276 - Cartogram geoprocessing tool\n\n\npacman::p_load(rgdal, raster)\n# Read SHAPEFILE.shp from the current working directory (\".\")\n# For the CSV we should use the local authority shapes only, so constituency below is not needed\n# ogrInfo(dsn = './data/GB_Hex_Cartogram_Const', layer = 'GB_Hex_Cartogram_Const')\n# const_shp <- readOGR(dsn = './data/GB_Hex_Cartogram_Const', layer = \"GB_Hex_Cartogram_Const\")\n# plot(const_shp)\n# const_shp$NAME %>% head\nauth_shp <- readOGR(dsn = './data/GB_Hex_Cartogram_LAs', layer = \"GB_Hex_Cartogram_LAs\")\nsummary(auth_shp)\nplot(head(auth_shp))\nnames_shp <- as.character(auth_shp$LAD12NM)\nnames(auth_shp)\n\n\n\n# get the actual shapes ====\nauth_1 <- readOGR('./data/Local_Authority_Districts_December_2016_Ultra_Generalised_Clipped_Boundaries_in_Great_Britain',\n                  layer = 'Local_Authority_Districts_December_2016_Ultra_Generalised_Clipped_Boundaries_in_Great_Britain')",
+    "created" : 1488587587503.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1329142",
+    "id" : "DF854F14",
+    "lastKnownWriteTime" : 1488682352,
+    "last_content_update" : 1488682352004,
+    "path" : "C:/Users/Xinye/Dropbox/programming/brexit/code/process_shapes.R",
+    "project_path" : "code/process_shapes.R",
+    "properties" : {
+        "marks" : "<:16,22\n>:16,22",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
