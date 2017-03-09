@@ -1,2 +1,3 @@
 *.geojson
 data/*.geojson
+.Rproj.user
