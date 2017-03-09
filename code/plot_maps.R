@@ -1,3 +1,4 @@
+# Before plotting the map, 
 # setup and packages
 pacman::p_load(
   'devtools', 'purrr', 'dplyr', 'htmlwidgets',
@@ -5,6 +6,14 @@ pacman::p_load(
   maptools, broom, ggplot2, ggmap, EE)
 source('./code/process_shapes.R')
 source('./code/process_votes.R')
+
+
+# Before plotting the map, the shape file is checked against the CSV for location matching
+names_diff <- setdiff(names_votes, names_shp)
+names_diff1 <- setdiff(names_shp, names_votes)
+
+# change the name in the CSV (add 'The')
+raw_votes$Area[grepl('glamorgan', raw_votes$Area, ignore.case = T)] <- 'The Vale of Glamorgan'
 
 shp_data <- data.frame(name = names_shp) %>% merge(raw_votes, by.x = 'name', by.y = 'Area')
 shp_data$Result <- with(shp_data, ifelse(Remain > Leave, 'Remain', 'Leave')) %>% as.factor

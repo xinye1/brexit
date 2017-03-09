@@ -1,3 +1,7 @@
+# This is where the hexagon map idea came from
+# However it is irrelevant because the tilegrams package only has maps of the US
+# It is left here as a future reference - anyone who's interested in plotting hexagon maps for the US, feel free to reference the sources below
+
 # setup and packages
 pacman::p_load(
   'devtools', 'purrr', 'dplyr', 'htmlwidgets',
