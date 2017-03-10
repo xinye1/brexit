@@ -17,12 +17,11 @@ la_84 <- spTransform(la_shp, CRS('+init=epsg:4326'))
 la_bng <- spTransform(la_shp, CRS('+init=epsg:27700'))
 # Transverse Mercator projection aka British National Grid
 
-test <- la_84@polygons[[1]]
-
 # Try to understand how the hexagon map is constructed
 la_84_f <- fortify(la_84)
 b <- bbox(la_1)
 b[2, 2] <- 58
+b[1, 2] <- 2.5
 basemap <- ggmap(
   get_map(location = b,
           source = "stamen",
@@ -32,24 +31,94 @@ basemap + geom_polygon(
   data = la_84_f,
   aes(x = long, y = lat, group = group),
   fill = 'darkorchid',
-  alpha = 0.7)
+  alpha = 0.7) + xlab('Longitude') + ylab('Latitude')
 
-# Use the British National Grid version to construct NI and Gibralta
+# Examine the hexagon map using leaflet
+labels2 <- sprintf(
+  '<strong>%s</strong>',
+  la_84$LAD12NM
+) %>% lapply(htmltools::HTML)
+
+leaflet(la_84) %>%
+  addPolygons(
+    color = "#444444", weight = 1, smoothFactor = 0.5,
+    label = labels2,
+    opacity = 0.8, fillColor = 'red',
+    highlightOptions = highlightOptions(color = "white", weight = 2, bringToFront = TRUE))
 
 
+# Use BNG map to creat new features for NI and Gibralta
+# Barrow-in-Furness seems close enough to NI
+# This feature will be shifted to the west to become NI!
+# Then shift NI south beyond the bottom edge to become Gibrraltar
+ind_ref <- which(la_bng$LAD12NM == 'Barrow-in-Furness')
+ni <- la_bng@polygons[[ind_ref]]
+ni_coors <- ni@Polygons[[1]]@coords
 
-# change the name in the CSV (add 'The')
+# NI seems around 150,000 meters to the west
+# GI 500,000 meters to the sount
+ni_shiftx <- -100000
+gi_shifty <- -600000
+
+# Shape coordinates
+ni_coors[, 1] <- ni_coors[, 1] + ni_shiftx
+gi_coors <- ni_coors
+gi_coors[, 2] <- ni_coors[, 2] + gi_shifty
+
+# Labpt coordinates
+ni_labpt_x <- ni@labpt[1] - ni_shiftx
+ni_labpt_y <- ni@labpt[2]
+ni_labpt <- c(ni_labpt_x, ni_labpt_y)
+
+gi_labpt_x <- ni@labpt[1] + ni_shiftx
+gi_labpt_y <- ni@labpt[2] + gi_shifty
+gi_labpt <- c(gi_labpt_x, gi_labpt_y)
+
+
+# Replace coordiates and ID in ni and gi
+ni_poly <- ni
+gi_poly <- ni
+ni_poly@Polygons[[1]]@coords <- ni_coors
+gi_poly@Polygons[[1]]@coords <- gi_coors
+ni_poly@Polygons[[1]]@labpt <- ni_labpt
+gi_poly@Polygons[[1]]@labpt <- gi_labpt
+ni_poly@labpt <- ni_labpt
+gi_poly@labpt <- gi_labpt
+new_poly_ids <- c('380', '381')
+ni_poly@ID <- new_poly_ids[1]
+gi_poly@ID <- new_poly_ids[2]
+
+
+# Construct the new SpatialPolygons
+la_bng_polygons <- c(la_bng@polygons, ni_poly, gi_poly)
+la_bng_spgs <- SpatialPolygons(la_bng_polygons)
+proj4string(la_bng_spgs) <- proj4string(la_bng)
+plot(la_bng_spgs)
+
+# Construct the new SpatialPolygonsDataFrame
+ni_lad12cn <- raw_votes[raw_votes$Area == 'Northern Ireland', 'Area_Code']
+gi_lad12cn <- raw_votes[raw_votes$Area == 'Gibraltar', 'Area_Code']
+new_data <- data.frame(
+  OBJECTID = c('380', '381'),
+  LAD12CD = c(ni_lad12cn, gi_lad12cn),
+  LAD12NM = c('Northern Ireland', 'Gibraltar'),
+  Shape_Leng = mean(la_bng$Shape_Leng),
+  Shape_Area = mean(la_bng$Shape_Area))
+la_new_data <- rbind(la_bng@data, new_data)
+
+rownames(la_new_data)[(nrow(la_new_data) - 1):nrow(la_new_data)] <- new_poly_ids
+la_bng_new <- SpatialPolygonsDataFrame(la_bng_spgs, la_new_data)
+
+
+# Fix the last bit of discrepancy in CSV
 raw_votes$Area[grepl('glamorgan', raw_votes$Area, ignore.case = T)] <- 'The Vale of Glamorgan'
 
-shp_data <- data.frame(name = names_shp) %>% merge(raw_votes, by.x = 'name', by.y = 'Area')
-shp_data$Result <- with(shp_data, ifelse(Remain > Leave, 'Remain', 'Leave')) %>% as.factor
-table(shp_data$Result)
 
-
-test <- auth_shp %>% merge(raw_votes, by.x = 'LAD12NM', by.y = 'Area')
-test$Result <- ifelse(test$Remain > test$Leave, 'Remain', 'Leave') %>% as.factor
-cols <- c('#cc0000', '#009933')
-plot(test, col = cols[test$Result])
+# Merge the CSV to the shape data
+la_bng_new <- la_bng_new %>% merge(raw_votes, by.x = 'LAD12NM', by.y = 'Area')
+la_bng_new$Result <- ifelse(la_bng_new$Remain > la_bng_new$Leave, 'Remain', 'Leave') %>% as.factor
+cols <- c('#ff6666', '#66ccff')
+plot(la_bng_new, col = cols[la_bng_new$Result])
 
 
 # Before running the following line, if encounter this error
@@ -62,41 +131,46 @@ plot(test, col = cols[test$Result])
 # If all True then continue
 
 # ggplot of hexagons ----
-test_f <- test %>% tidy(region = "LAD12NM")
-str(as.factor(test_f$id))
-test_f1 <- test_f %>%
-  left_join(data.frame(id = as.character(test$LAD12NM), Result = as.factor(test$Result), stringsAsFactors = F))
+la_df <- la_bng_new %>% tidy(region = "LAD12NM")
+la_df <- la_df %>%
+  left_join(
+    data.frame(id = as.character(la_bng_new$LAD12NM),
+               Result = as.factor(la_bng_new$Result),
+               stringsAsFactors = F))
 ggplot() + theme_bw() + theme_nothing(legend = TRUE) + coord_fixed() +
-  geom_polygon(data = test_f1, aes(x = long, y = lat, group = id, fill = Result))
+  geom_polygon(data = la_df, aes(x = long, y = lat, group = id, fill = Result))
 
 
 # Cartogram ----
 # install_github("omegahat/Rcartogram")
 # install_github('chrisbrunsdon/getcartr', subdir='getcartr')
-carto <- cartogram(test, 'Valid_Votes')
-plot(carto, col = cols[test$Result])
+carto <- cartogram(la_bng_new, 'Valid_Votes')
+plot(carto, col = cols[la_bng_new$Result])
 png('./output/brexit1.png')
 plot(carto, col = cols[test$Result])
 dev.off()
 
-test_f_cart <- carto %>% tidy(region = 'LAD12NM')
-test_f_cart1 <- test_f_cart %>%
-  left_join(data.frame(id = as.character(test$LAD12NM), Result = as.factor(test$Result), stringsAsFactors = F))
+carto_df <- carto %>% tidy(region = 'LAD12NM')
+carto_df <- carto_df %>%
+  left_join(
+    data.frame(id = as.character(la_bng_new$LAD12NM),
+               Result = as.factor(la_bng_new$Result),
+               stringsAsFactors = F))
 png('./output/brexit2.png')
 ggplot() + theme_bw() + theme_nothing(legend = TRUE) + coord_fixed() +
-  geom_polygon(data = test_f_cart1, aes(x = long, y = lat, group = id, fill = Result, colour = Result))
+  geom_polygon(data = carto_df, aes(x = long, y = lat, group = id, fill = Result, colour = Result))
 dev.off()
 
 
 
 # normal shape ====
-auth_data <- auth_1 %>% merge(raw_votes, by.x = 'lad16nm', by.y = 'Area')
-auth_data$Result <- ifelse(auth_data$Remain > auth_data$Leave, 'Remain', 'Leave')
+la_1_data <- la_1 %>% merge(raw_votes, by.x = 'lad16nm', by.y = 'Area')
+la_1_data$Result <- ifelse(la_1_data$Remain > la_1_data$Leave, 'Remain', 'Leave')
 # proj4string(auth_data) <- ee_get_const()$wgs84
 auth_data@proj4string <- CRS(as.character(NA))
 auth_data@proj4string <- ee_get_const()$wgs84
-carto1 <- cartogram(auth_data, 'Valid_Votes')
-plot(carto1)
+carto_1 <- cartogram(la_1_data, 'Valid_Votes')
+plot(carto_1)
 carto2 <- carto1 %>% fortify(region = 'Region')
 # ggplot()  + theme_bw() + theme_nothing(legend = TRUE) + coord_fixed() +
 #   geom_polygon(data = carto1, aes(x = long, y = lat, group = id, fill = as.factor(Result), colour = as.factor(Result)))
@@ -112,8 +186,7 @@ epsg4326 <- leafletCRS(
   proj4def = '+init=epsg:4326 +proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0',
   resolutions = 2^(16:7))
 
-
-cols <- c('#800000', '#006622')
+cols <- c('#b30000', '#0040ff')
 labels1 <- sprintf(
   '<strong>%s</strong><br/>Remain: %s (%.0f%%)<br/>Leave: %s (%.0f%%)',
   carto1$lad16nm,
@@ -131,14 +204,8 @@ leaflet(carto1, options = leafletOptions(crs = epsg4326)) %>%
 
 
 # Try leaflet with the hexagon map ====
-test$Valid_Votes_sq <- test$Valid_Votes ^ 2
-carto_x <- cartogram(test, 'Valid_Votes_sq')
-tmp <- data.frame(
-  remain = carto_x$Remain,
-  leave = carto_x$Leave,
-  tot = carto_x$Remain + carto_x$Leave,
-  valid = carto_x$Valid_Votes) %>%
-  mutate(ratio = tot / valid - 1)
+la_bng_new$Valid_Votes_sq <- la_bng_new$Valid_Votes ^ 2
+carto_x <- cartogram(la_bng_new, 'Valid_Votes_sq')
 carto_x$fill_op <- abs(carto_x$Pct_Remain - 50) / max(abs(carto_x$Pct_Remain - 50))
 labels2 <- sprintf(
   '<strong>%s</strong><br/>Remain: %s (%.0f%%)<br/>Leave: %s (%.0f%%)',
