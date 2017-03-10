@@ -22,6 +22,7 @@ test <- la_84@polygons[[1]]
 # Try to understand how the hexagon map is constructed
 la_84_f <- fortify(la_84)
 b <- bbox(la_1)
+b[2, 2] <- 58
 basemap <- ggmap(
   get_map(location = b,
           source = "stamen",
