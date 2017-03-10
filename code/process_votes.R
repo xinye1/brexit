@@ -4,7 +4,7 @@
 
 csv_url <- 'http://www.electoralcommission.org.uk/__data/assets/file/0014/212135/EU-referendum-result-data.csv'
 
-# For reproductability the CSV is also downloaded in the data/ folder
+# For reproducibility the CSV is also downloaded in the data/ folder
 # download.file(url = csv_url, destfile = paste0('./data/', regmatches(csv_url, regexpr('[^/]+$', csv_url))))
 
 raw_votes <- read.csv(csv_url, stringsAsFactors = F)

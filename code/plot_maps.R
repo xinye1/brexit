@@ -1,9 +1,7 @@
-# Before plotting the map, 
-# setup and packages
+# setup and loading packages
 pacman::p_load(
-  'devtools', 'purrr', 'dplyr', 'htmlwidgets',
-  'stringr', 'rvest', 'xml2', 'htmltools', 'leaflet', cartogram,
-  maptools, broom, ggplot2, ggmap, EE)
+  devtools, purrr, dplyr, htmlwidgets, stringr, rvest, xml2,
+  htmltools, leaflet, cartogram, maptools, broom, ggplot2, ggmap)
 source('./code/process_shapes.R')
 source('./code/process_votes.R')
 
@@ -11,6 +9,33 @@ source('./code/process_votes.R')
 # Before plotting the map, the shape file is checked against the CSV for location matching
 names_diff <- setdiff(names_votes, names_shp)
 names_diff1 <- setdiff(names_shp, names_votes)
+
+summary(la_shp)
+# EPSG:3857 project
+
+la_84 <- spTransform(la_shp, CRS('+init=epsg:4326'))
+la_bng <- spTransform(la_shp, CRS('+init=epsg:27700'))
+# Transverse Mercator projection aka British National Grid
+
+test <- la_84@polygons[[1]]
+
+# Try to understand how the hexagon map is constructed
+la_84_f <- fortify(la_84)
+b <- bbox(la_1)
+basemap <- ggmap(
+  get_map(location = b,
+          source = "stamen",
+          maptype = "watercolor",
+          crop = T))
+basemap + geom_polygon(
+  data = la_84_f,
+  aes(x = long, y = lat, group = group),
+  fill = 'darkorchid',
+  alpha = 0.7)
+
+# Use the British National Grid version to construct NI and Gibralta
+
+
 
 # change the name in the CSV (add 'The')
 raw_votes$Area[grepl('glamorgan', raw_votes$Area, ignore.case = T)] <- 'The Vale of Glamorgan'
