@@ -220,3 +220,16 @@ leaflet(carto_x, options = leafletOptions(crs = epsg4326)) %>%
     label = labels2,
     opacity = 1.0, fillOpacity = carto_x$fill_op, fillColor = cols[as.factor(carto_x$Result)],
     highlightOptions = highlightOptions(color = "white", weight = 2, bringToFront = TRUE))
+
+
+# ggplot the ^2 version
+carto_x_df <- carto_x %>% tidy(region = 'LAD12NM')
+carto_x_df <- carto_x_df %>%
+  left_join(
+    data.frame(id = as.character(la_bng_new$LAD12NM),
+               Result = as.factor(la_bng_new$Result),
+               stringsAsFactors = F))
+png('./output/brexit3.png')
+ggplot() + theme_bw() + theme_nothing(legend = TRUE) + coord_fixed() +
+  geom_polygon(data = carto_x_df, aes(x = long, y = lat, group = id, fill = Result, colour = Result))
+dev.off()
