@@ -1,6 +1,8 @@
 ---
 title: "Visualising Brexit Votes with Leaflet and Rcartogram"
 output: html_notebook
+date: "2017-03-25"
+]
 ---
 
 As one of the first posts on my shiny new blog, I give you data visualisation (of course, what's more crowd pleasing than that?)

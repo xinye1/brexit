@@ -1,5 +1,7 @@
 # Visualisation of the results of the UK EU Referendum June 2016
 
+This project now is on my blog http://xinye1.github.io.
+
 ## Introduction
 
 The Referendum took place on 23rd June 2016 in the UK to decide whether the country would remain a member of the European Union (known as Remain, and the other side is Leave).
