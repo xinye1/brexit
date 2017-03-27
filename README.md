@@ -1,6 +1,6 @@
 # Visualisation of the results of the UK EU Referendum June 2016
 
-This project now is on my blog http://xinye1.github.io.
+This project now is on my blog https://xinye1.github.io/projects/brexit-cartogram-leaflet/
 
 ## Introduction
 
